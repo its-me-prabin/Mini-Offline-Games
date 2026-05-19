@@ -1,0 +1,19 @@
+{
+  "name": "Mini Games Collection",
+  "short_name": "Mini Games",
+  "description": "12 handcrafted browser games. No downloads, no ads — just pure fun.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#7c5cfc",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/simple-game.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"]
+}

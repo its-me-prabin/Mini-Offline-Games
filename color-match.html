@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Match — Mini Games Collection</title>
+    <meta name="description" content="Click the matching color before time runs out! Build combos for bonus points.">
+    <link rel="icon" type="image/png" href="icons/color-match.png">
+    <style>
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 100 900;
+            src: url('fonts/Outfit-Variable.woff2') format('woff2');
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 100vh; font-family: 'Outfit', sans-serif; color: #f0f0f5; overflow: hidden;
+        }
+        .back-btn {
+            position: fixed; top: 16px; left: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+
+        .restart-btn {
+            position: fixed; top: 16px; right: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
+
+        .game-title {
+            font-size: 28px; font-weight: 800; margin-bottom: 16px;
+            background: linear-gradient(135deg, #ff6b9d, #ffd93d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        #gameContainer {
+            position: relative; width: calc(100% - 40px); max-width: 460px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.3);
+        }
+        .stats {
+            display: flex; justify-content: space-between; margin-bottom: 18px;
+            font-size: 15px; font-weight: 600;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.06); padding: 6px 16px; border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat-item span { font-weight: 700; }
+
+        #targetColor {
+            text-align: center; margin-bottom: 14px; font-weight: 600; font-size: 16px;
+            background: rgba(255,255,255,0.04); padding: 12px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        #targetColorName { font-size: 22px; font-weight: 800; }
+
+        #timeBar {
+            width: 100%; height: 8px; background: rgba(255,255,255,0.06);
+            border-radius: 100px; overflow: hidden; margin-bottom: 18px;
+        }
+        #timeBarFill {
+            height: 100%; border-radius: 100px;
+            background: linear-gradient(90deg, #ff6b9d, #ffd93d, #00d4aa);
+            width: 100%; transition: width 0.1s linear;
+        }
+
+        #gameBoard {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;
+        }
+        .colorBox {
+            aspect-ratio: 1; border-radius: 12px; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 2px solid transparent;
+        }
+        .colorBox:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .colorBox:active { transform: scale(0.94); }
+        .colorBox.correct {
+            animation: pulse-correct 0.4s ease;
+        }
+        .colorBox.wrong {
+            animation: shake-wrong 0.4s ease;
+        }
+
+        @keyframes pulse-correct {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); box-shadow: 0 0 30px rgba(0,212,170,0.5); }
+        }
+        @keyframes shake-wrong {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        #gameOverScreen {
+            position: absolute; inset: 0;
+            background: rgba(10,10,26,0.95); backdrop-filter: blur(10px);
+            display: none; justify-content: center; align-items: center;
+            flex-direction: column; border-radius: 16px; z-index: 20;
+        }
+        #gameOverScreen h2 {
+            font-size: 38px; font-weight: 800;
+            background: linear-gradient(135deg, #ff6b9d, #ffd93d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        #gameOverScreen p { font-size: 18px; margin: 6px; color: rgba(240,240,245,0.7); }
+        #gameOverScreen p span { color: #ffd93d; font-weight: 700; }
+        #gameOverScreen button {
+            margin-top: 20px; padding: 12px 32px; font-size: 16px; font-weight: 700;
+            background: linear-gradient(135deg, #ff6b9d, #ffd93d); color: #0a0a1a;
+            border: none; border-radius: 100px; cursor: pointer;
+            font-family: 'Outfit', sans-serif; transition: all 0.3s;
+        }
+        #gameOverScreen button:hover { transform: scale(1.05); }
+
+        .instructions { font-size: 13px; margin-top: 14px; color: rgba(240,240,245,0.4); }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back</a>
+    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    <div class="game-title">🎨 Color Match</div>
+    <div id="gameContainer">
+        <div class="stats">
+            <div class="stat-item">Score: <span id="score">0</span></div>
+            <div class="stat-item">Combo: <span id="combo">0</span></div>
+            <div class="stat-item">Best: <span id="best">0</span></div>
+        </div>
+
+        <div id="targetColor">Click the color: <span id="targetColorName"></span></div>
+
+        <div id="timeBar"><div id="timeBarFill"></div></div>
+
+        <div id="gameBoard"></div>
+
+        <div id="gameOverScreen">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Best Combo: <span id="finalCombo">0</span></p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+    <div class="instructions">🖱️ Click the matching color before time runs out!</div>
+
+    <script>
+        // Fixed: color names now actually match their hex values
+        const colors = [
+            { name: 'Red', hex: '#FF6B6B' },
+            { name: 'Teal', hex: '#4ECDC4' },
+            { name: 'Mint', hex: '#95E1D3' },
+            { name: 'Yellow', hex: '#FFE66D' },
+            { name: 'Lavender', hex: '#C7B3E5' },
+            { name: 'Pink', hex: '#FF9FF3' },
+            { name: 'Rose', hex: '#FFB8D1' },
+            { name: 'Sky Blue', hex: '#74B9FF' },
+            { name: 'Sage', hex: '#A8E6CF' }
+        ];
+
+        const gameBoard = document.getElementById('gameBoard');
+        const scoreDisplay = document.getElementById('score');
+        const comboDisplay = document.getElementById('combo');
+        const bestDisplay = document.getElementById('best');
+        const targetColorName = document.getElementById('targetColorName');
+        const timeBarFill = document.getElementById('timeBarFill');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const finalComboDisplay = document.getElementById('finalCombo');
+        const inGameRestartBtn = document.getElementById('inGameRestartBtn');
+
+        inGameRestartBtn.addEventListener('click', restartGame);
+
+        let score = 0;
+        let combo = 0;
+        let bestCombo = parseInt(localStorage.getItem('colorMatchBest')) || 0;
+        let gameRunning = true;
+        let targetColorHex = '';
+        let timeRemaining = 3;
+        let timeMax = 3;
+        let gameTimer = null;
+        let speedIncrease = 0;
+
+        bestDisplay.textContent = bestCombo;
+
+        function initializeBoard() {
+            gameBoard.innerHTML = '';
+            const shuffledColors = [...colors].sort(() => Math.random() - 0.5);
+            shuffledColors.forEach(color => {
+                const box = document.createElement('div');
+                box.className = 'colorBox';
+                box.style.backgroundColor = color.hex;
+                box.addEventListener('click', () => checkColor(color.hex, box));
+                gameBoard.appendChild(box);
+            });
+        }
+
+        function setNewTarget() {
+            const target = colors[Math.floor(Math.random() * colors.length)];
+            targetColorHex = target.hex;
+            targetColorName.style.color = target.hex;
+            targetColorName.textContent = target.name;
+            timeRemaining = Math.max(0.5, timeMax - speedIncrease);
+            startTimer();
+        }
+
+        function startTimer() {
+            if (gameTimer) clearInterval(gameTimer);
+            gameTimer = setInterval(() => {
+                timeRemaining -= 0.05;
+                const percentage = Math.max(0, (timeRemaining / Math.max(0.5, timeMax - speedIncrease)) * 100);
+                timeBarFill.style.width = percentage + '%';
+                if (timeRemaining <= 0) endGame();
+            }, 50);
+        }
+
+        function checkColor(hex, boxEl) {
+            if (!gameRunning) return;
+
+            if (hex === targetColorHex) {
+                boxEl.classList.add('correct');
+                setTimeout(() => boxEl.classList.remove('correct'), 400);
+                score += Math.floor(timeRemaining * 10) * (1 + Math.floor(combo / 5));
+                combo++;
+                if (combo > bestCombo) {
+                    bestCombo = combo;
+                    localStorage.setItem('colorMatchBest', bestCombo);
+                }
+                scoreDisplay.textContent = score;
+                comboDisplay.textContent = combo;
+                bestDisplay.textContent = bestCombo;
+                if (combo % 5 === 0) speedIncrease = Math.min(1.5, speedIncrease + 0.1);
+                initializeBoard();
+                setNewTarget();
+            } else {
+                // Fixed: wrong click penalizes time instead of giving a free new round
+                boxEl.classList.add('wrong');
+                setTimeout(() => boxEl.classList.remove('wrong'), 400);
+                combo = 0;
+                comboDisplay.textContent = combo;
+                // Deduct time as penalty — do NOT change the target or reset the timer
+                timeRemaining -= 0.5;
+                if (timeRemaining <= 0) endGame();
+            }
+        }
+
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            gameOverScreen.style.display = 'flex';
+            finalScoreDisplay.textContent = score;
+            finalComboDisplay.textContent = bestCombo;
+        }
+
+        // Fixed: removed duplicate restartGame function
+        function restartGame() {
+            score = 0; combo = 0; speedIncrease = 0;
+            gameRunning = true; timeRemaining = 3;
+            scoreDisplay.textContent = score;
+            comboDisplay.textContent = combo;
+            gameOverScreen.style.display = 'none';
+            initializeBoard();
+            setNewTarget();
+        }
+
+        initializeBoard();
+        setNewTarget();
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (!gameRunning || gameOverScreen.style.display === 'flex')) {
+                restartGame();
+            }
+        });
+    </script>
+</body>
+</html>

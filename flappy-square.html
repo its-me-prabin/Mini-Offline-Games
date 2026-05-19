@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Square — Mini Games Collection</title>
+    <meta name="description" content="Click or tap to flap through narrow pipe gaps. How far can you fly?">
+    <link rel="icon" type="image/png" href="icons/flappy-square.png">
+    <style>
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 100 900;
+            src: url('fonts/Outfit-Variable.woff2') format('woff2');
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 100vh; font-family: 'Outfit', sans-serif; color: #f0f0f5; overflow: hidden;
+        }
+        .back-btn {
+            position: fixed; top: 16px; left: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+
+        .restart-btn {
+            position: fixed; top: 16px; right: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
+
+        .game-title {
+            font-size: 28px; font-weight: 800; margin-bottom: 16px;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        #gameContainer {
+            position: relative; 
+            width: 100%; 
+            max-width: 400px;
+            aspect-ratio: 400 / 600;
+            background: linear-gradient(180deg, #1a1a3e 0%, #0d0d24 100%);
+            border: 2px solid rgba(124,92,252,0.2); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 0 40px rgba(124,92,252,0.1);
+        }
+        canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+        #scoreDisplay {
+            position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+            font-size: 32px; font-weight: 800; z-index: 10;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        #gameOverScreen {
+            position: absolute; inset: 0;
+            background: rgba(10,10,26,0.95); backdrop-filter: blur(10px);
+            display: none; justify-content: center; align-items: center;
+            flex-direction: column; z-index: 20; border-radius: 12px;
+        }
+        #gameOverScreen h2 {
+            font-size: 42px; font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        #gameOverScreen p { font-size: 20px; margin: 8px; color: rgba(240,240,245,0.7); }
+        #gameOverScreen p span { color: #ffd93d; font-weight: 700; }
+        #gameOverScreen button {
+            margin-top: 20px; padding: 12px 32px; font-size: 16px; font-weight: 700;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: #0a0a1a;
+            border: none; border-radius: 100px; cursor: pointer;
+            font-family: 'Outfit', sans-serif; transition: all 0.3s;
+        }
+        #gameOverScreen button:hover { transform: scale(1.05); }
+        .instructions { font-size: 13px; margin-top: 14px; color: rgba(240,240,245,0.4); }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn" id="backBtn">← Back</a>
+    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    <div class="game-title">🐦 Flappy Square</div>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">0</div>
+        <div id="gameOverScreen">
+            <h2>Game Over!</h2>
+            <p>Score: <span id="finalScore">0</span></p>
+            <p>Best: <span id="bestScore">0</span></p>
+            <button id="restartBtn">Play Again</button>
+        </div>
+    </div>
+    <div class="instructions">Click or press SPACE to flap • Avoid the pipes!</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('gameContainer');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreEl = document.getElementById('finalScore');
+        const bestScoreEl = document.getElementById('bestScore');
+        const restartBtn = document.getElementById('restartBtn');
+        const inGameRestartBtn = document.getElementById('inGameRestartBtn');
+        const backBtn = document.getElementById('backBtn');
+
+        const W = 400, H = 600;
+        canvas.width = W; canvas.height = H;
+
+        let playerY = 300, playerVelocity = 0, score = 0, gameRunning = true, started = false;
+        let bestScore = parseInt(localStorage.getItem('flappyBest')) || 0;
+        let pipes = [], stars = [];
+        bestScoreEl.textContent = bestScore;
+
+        const gravity = 0.25, flapPower = -5.5, pipeGap = 160, pipeWidth = 60;
+        const playerSize = 32, playerX = 60;
+        const maxFallSpeed = 8; // Terminal velocity cap
+
+        // Generate background stars
+        for (let i = 0; i < 60; i++) {
+            stars.push({ x: Math.random() * W, y: Math.random() * H, s: Math.random() * 2 + 0.5, a: Math.random() });
+        }
+
+        function flap() {
+            if (!gameRunning) return;
+            if (!started) started = true;
+            playerVelocity = flapPower;
+        }
+
+        function createPipe() {
+            const gapY = Math.random() * (H - pipeGap - 120) + 60;
+            pipes.push({ x: W, gapY, scored: false });
+        }
+
+        let lastTime = 0;
+        function update(time) {
+            if (!time) time = performance.now();
+            if (time - lastTime < 16) return; // Cap at ~60 FPS
+            lastTime = time;
+
+            if (!gameRunning) return;
+
+            // Don't apply physics until first click
+            if (!started) {
+                // Gentle hover animation while waiting
+                playerY = 300 + Math.sin(Date.now() / 300) * 8;
+                return;
+            }
+
+            playerVelocity += gravity;
+            if (playerVelocity > maxFallSpeed) playerVelocity = maxFallSpeed;
+            playerY += playerVelocity;
+
+            if (playerY < 0 || playerY + playerSize > H) { endGame(); return; }
+
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                const p = pipes[i];
+                p.x -= 3;
+
+                // Collision
+                if (playerX + playerSize > p.x && playerX < p.x + pipeWidth) {
+                    if (playerY < p.gapY || playerY + playerSize > p.gapY + pipeGap) {
+                        endGame(); return;
+                    }
+                }
+
+                if (p.x + pipeWidth < playerX && !p.scored) {
+                    p.scored = true;
+                    score++;
+                    scoreDisplay.textContent = score;
+                }
+
+                if (p.x < -pipeWidth) { pipes.splice(i, 1); }
+            }
+
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < W - 200) createPipe();
+        }
+
+        function draw() {
+            if (!gameRunning && gameOverScreen.style.display === 'flex') return;
+            // Background
+            const grad = ctx.createLinearGradient(0, 0, 0, H);
+            grad.addColorStop(0, '#1a1a3e');
+            grad.addColorStop(1, '#0d0d24');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            // Stars
+            stars.forEach(s => {
+                s.a += 0.02;
+                ctx.globalAlpha = 0.3 + Math.sin(s.a) * 0.3;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(s.x, s.y, s.s, s.s);
+            });
+            ctx.globalAlpha = 1;
+
+            // Pipes with gradient
+            pipes.forEach(p => {
+                const pGrad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
+                pGrad.addColorStop(0, '#2d6a4f');
+                pGrad.addColorStop(0.5, '#40916c');
+                pGrad.addColorStop(1, '#2d6a4f');
+                ctx.fillStyle = pGrad;
+                // Top pipe
+                ctx.fillRect(p.x, 0, pipeWidth, p.gapY);
+                ctx.fillRect(p.x - 4, p.gapY - 20, pipeWidth + 8, 20);
+                // Bottom pipe
+                ctx.fillRect(p.x, p.gapY + pipeGap, pipeWidth, H - p.gapY - pipeGap);
+                ctx.fillRect(p.x - 4, p.gapY + pipeGap, pipeWidth + 8, 20);
+            });
+
+            // Player with glow
+            ctx.save();
+            ctx.shadowColor = '#ff6b6b';
+            ctx.shadowBlur = 15;
+            const pGrad = ctx.createLinearGradient(playerX, playerY, playerX + playerSize, playerY + playerSize);
+            pGrad.addColorStop(0, '#ff6b6b');
+            pGrad.addColorStop(1, '#ff4757');
+            ctx.fillStyle = pGrad;
+            ctx.beginPath();
+            ctx.roundRect(playerX, playerY, playerSize, playerSize, 6);
+            ctx.fill();
+            ctx.restore();
+
+            // Eyes
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(playerX + 18, playerY + 8, 8, 8);
+            ctx.fillStyle = '#1a1a3e';
+            ctx.fillRect(playerX + 22, playerY + 10, 4, 4);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('flappyBest', bestScore);
+            }
+            finalScoreEl.textContent = score;
+            bestScoreEl.textContent = bestScore;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function restartGame() {
+            playerY = 300; playerVelocity = 0; score = 0; gameRunning = true; started = false;
+            pipes = [];
+            scoreDisplay.textContent = '0';
+            gameOverScreen.style.display = 'none';
+            gameLoop();
+        }
+
+        // Fixed: prevent flap when clicking UI elements
+        container.addEventListener('click', (e) => {
+            if (e.target.closest('#gameOverScreen') || e.target.closest('#backBtn') || e.target.closest('#inGameRestartBtn')) return;
+            flap();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') { e.preventDefault(); flap(); }
+            if (e.code === 'Enter' && !gameRunning) { e.preventDefault(); restartGame(); }
+        });
+        restartBtn.addEventListener('click', (e) => { e.stopPropagation(); restartGame(); });
+        inGameRestartBtn.addEventListener('click', (e) => { e.stopPropagation(); restartGame(); });
+
+        function gameLoop(time) {
+            update(time);
+            draw();
+            if (gameRunning || !started) requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    </script>
+</body>
+</html>

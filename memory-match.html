@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match — Mini Games Collection</title>
+    <meta name="description" content="Flip cards to find matching pairs. Test your memory across difficulty levels!">
+    <link rel="icon" type="image/png" href="icons/memory-match.png">
+    <style>
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 100 900;
+            src: url('fonts/Outfit-Variable.woff2') format('woff2');
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 100vh; font-family: 'Outfit', sans-serif; color: #f0f0f5;
+            padding: 20px;
+        }
+        .back-btn {
+            position: fixed; top: 16px; left: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+
+        .restart-btn {
+            position: fixed; top: 16px; right: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
+
+        .game-title {
+            font-size: 28px; font-weight: 800; margin-bottom: 16px;
+            background: linear-gradient(135deg, #7c5cfc, #ff6b9d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        .controls {
+            display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; justify-content: center; align-items: center;
+        }
+        .diff-btn {
+            padding: 8px 20px; border-radius: 100px; font-size: 14px; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06);
+            color: #f0f0f5; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.3s;
+        }
+        .diff-btn:hover { background: rgba(255,255,255,0.12); }
+        .diff-btn.active { background: linear-gradient(135deg, #7c5cfc, #a78bfa); border-color: transparent; }
+
+        .stats {
+            display: flex; gap: 12px; margin-bottom: 18px;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.06); padding: 6px 16px; border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.08); font-size: 14px; font-weight: 600;
+        }
+        .stat-item span { color: #7c5cfc; }
+
+        #gameBoard {
+            display: grid; gap: 10px; perspective: 1000px; width: 100%; max-width: 440px;
+        }
+        .card {
+            aspect-ratio: 1; border-radius: 12px; cursor: pointer; position: relative;
+            transform-style: preserve-3d; transition: transform 0.5s;
+        }
+        .card.flipped { transform: rotateY(180deg); }
+        .card.matched { transform: rotateY(180deg); }
+        .card.matched .card-front { box-shadow: 0 0 20px rgba(0,212,170,0.4); border-color: #00d4aa; }
+
+        .card-face {
+            position: absolute; inset: 0; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; backface-visibility: hidden;
+        }
+        .card-back {
+            background: linear-gradient(135deg, rgba(124,92,252,0.3), rgba(255,107,157,0.2));
+            border: 1px solid rgba(124,92,252,0.3);
+            font-size: 24px; color: rgba(255,255,255,0.3);
+        }
+        .card-back::after { content: '?'; }
+        .card-front {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            transform: rotateY(180deg); font-size: 32px;
+        }
+
+        .win-banner {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(10,10,26,0.95); backdrop-filter: blur(20px);
+            border: 1px solid rgba(124,92,252,0.3); border-radius: 20px;
+            padding: 40px 50px; text-align: center; z-index: 50; display: none;
+            width: 90%; max-width: 400px;
+        }
+        .win-banner h2 {
+            font-size: 36px; font-weight: 800;
+            background: linear-gradient(135deg, #7c5cfc, #00d4aa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .win-banner p { margin: 10px 0; color: rgba(240,240,245,0.7); font-size: 18px; }
+        .win-banner p span { color: #7c5cfc; font-weight: 700; }
+        .win-banner button {
+            margin-top: 16px; padding: 12px 32px; font-size: 16px; font-weight: 700;
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa); color: white;
+            border: none; border-radius: 100px; cursor: pointer; font-family: 'Outfit', sans-serif;
+        }
+
+        .instructions { font-size: 13px; margin-top: 14px; color: rgba(240,240,245,0.4); text-align: center; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back</a>
+    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    <div class="game-title">🧩 Memory Match</div>
+
+    <div class="controls">
+        <button class="diff-btn active" data-diff="easy">Easy (3×4)</button>
+        <button class="diff-btn" data-diff="medium">Medium (4×4)</button>
+        <button class="diff-btn" data-diff="hard">Hard (4×5)</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">Moves: <span id="moves">0</span></div>
+        <div class="stat-item">Pairs: <span id="pairs">0</span>/<span id="totalPairs">6</span></div>
+    </div>
+
+    <div id="gameBoard"></div>
+
+    <div class="win-banner" id="winBanner">
+        <h2>🎉 You Won!</h2>
+        <p>Completed in <span id="finalMoves">0</span> moves</p>
+        <button onclick="startGame()">Play Again</button>
+    </div>
+
+    <div class="instructions">🖱️ Click cards to flip them • Find all matching pairs!</div>
+
+    <script>
+        // Fixed: no duplicate emojis in the source array
+        const allEmojis = ['🍎', '🍌', '🍇', '🍊', '🍓', '🍑', '🥝', '🍒', '🫐', '🥭',
+                           '🍋', '🍈', '🍉', '🍍', '🥥', '🫒', '🌶️', '🥑', '🍔', '🎂'];
+
+        const difficulties = {
+            easy:   { cols: 4, pairs: 6 },
+            medium: { cols: 4, pairs: 8 },
+            hard:   { cols: 5, pairs: 10 }  // Fixed: 4×5 = 20 cards = 10 pairs — no overflow
+        };
+
+        const gameBoard = document.getElementById('gameBoard');
+        const movesDisplay = document.getElementById('moves');
+        const pairsDisplay = document.getElementById('pairs');
+        const totalPairsDisplay = document.getElementById('totalPairs');
+        const winBanner = document.getElementById('winBanner');
+        const finalMovesDisplay = document.getElementById('finalMoves');
+        const inGameRestartBtn = document.getElementById('inGameRestartBtn');
+
+        inGameRestartBtn.addEventListener('click', startGame);
+
+        let currentDiff = 'easy';
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let lockBoard = false;
+
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDiff = btn.dataset.diff;
+                startGame();
+            });
+        });
+
+        function startGame() {
+            const { cols, pairs } = difficulties[currentDiff];
+            const totalCards = pairs * 2;
+            const rows = totalCards / cols;
+
+            flippedCards = []; matchedPairs = 0; moves = 0; lockBoard = false;
+            movesDisplay.textContent = '0';
+            pairsDisplay.textContent = '0';
+            totalPairsDisplay.textContent = pairs;
+            winBanner.style.display = 'none';
+
+            // Pick unique emojis
+            const shuffledEmojis = [...allEmojis].sort(() => Math.random() - 0.5);
+            const gameEmojis = shuffledEmojis.slice(0, pairs);
+            const deck = [...gameEmojis, ...gameEmojis].sort(() => Math.random() - 0.5);
+
+            gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            gameBoard.innerHTML = '';
+
+            deck.forEach((emoji, i) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.emoji = emoji;
+                card.dataset.index = i;
+                card.innerHTML = `
+                    <div class="card-face card-back"></div>
+                    <div class="card-face card-front">${emoji}</div>
+                `;
+                card.addEventListener('click', () => flipCard(card));
+                gameBoard.appendChild(card);
+            });
+        }
+
+        function flipCard(card) {
+            if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                movesDisplay.textContent = moves;
+                lockBoard = true;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [a, b] = flippedCards;
+            if (a.dataset.emoji === b.dataset.emoji) {
+                a.classList.add('matched');
+                b.classList.add('matched');
+                matchedPairs++;
+                pairsDisplay.textContent = matchedPairs;
+                flippedCards = [];
+                lockBoard = false;
+                if (matchedPairs === difficulties[currentDiff].pairs) {
+                    setTimeout(() => {
+                        finalMovesDisplay.textContent = moves;
+                        winBanner.style.display = 'block';
+                    }, 400);
+                }
+            } else {
+                setTimeout(() => {
+                    a.classList.remove('flipped');
+                    b.classList.remove('flipped');
+                    flippedCards = [];
+                    lockBoard = false;
+                }, 800);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && winBanner.style.display === 'block') {
+                startGame();
+            }
+        });
+
+        startGame();
+    </script>
+</body>
+</html>

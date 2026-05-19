@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stick Hero — Mini Games Collection</title>
+    <meta name="description" content="Hold to stretch a stick across gaps. Land on the platform — or fall!">
+    <link rel="icon" type="image/png" href="icons/stick-hero.png">
+    <style>
+      @font-face {
+        font-family: 'Outfit';
+        font-style: normal;
+        font-display: swap;
+        font-weight: 100 900;
+        src: url('fonts/Outfit-Variable.woff2') format('woff2');
+      }
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        font-family: 'Outfit', sans-serif;
+        overflow: hidden;
+        background: #0a0a1a;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .back-btn {
+        position: fixed; top: 16px; left: 16px; z-index: 100;
+        background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15); color: #f0f0f5;
+        padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+        font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+        transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+      }
+      .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+
+      .restart-btn {
+          position: fixed; top: 16px; right: 16px; z-index: 100;
+          background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.15); color: #f0f0f5;
+          padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+          font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+          transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+      }
+      .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
+
+      #gameContainer {
+        position: relative; width: 100%; max-width: 480px; aspect-ratio: 480/600; height: auto;
+        background: #0d0d24; border: 2px solid rgba(124,92,252,0.3);
+        border-radius: 12px; overflow: hidden;
+        box-shadow: 0 0 40px rgba(124,92,252,0.1);
+        cursor: pointer;
+      }
+
+      #game {
+        display: block; width: 100%; height: 100%;
+      }
+
+      #score {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 10;
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 20px;
+        border-radius: 100px;
+        color: #f0f0f5;
+        font-family: 'Outfit', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      #introduction {
+        width: 220px;
+        position: absolute;
+        top: 25%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 500;
+        font-size: 15px;
+        font-family: 'Outfit', sans-serif;
+        text-align: center;
+        transition: opacity 1s;
+        color: rgba(255,255,255,0.8);
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(8px);
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        pointer-events: none;
+      }
+
+      #restart {
+        width: 130px;
+        height: 130px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        color: #f8f3f3;
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        border: none;
+        font-weight: 700;
+        font-size: 1.1em;
+        font-family: 'Outfit', sans-serif;
+        display: none;
+        cursor: pointer;
+        box-shadow: 0 8px 30px rgba(238,90,36,0.3);
+        transition: transform 0.2s;
+        z-index: 20;
+      }
+      #restart:hover { transform: translate(-50%, -50%) scale(1.08); }
+
+      #perfect {
+        position: absolute;
+        top: 35%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 1s;
+        color: #ffd93d;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 22px;
+        text-shadow: 0 0 20px rgba(255,217,61,0.5);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="index.html" class="back-btn" id="backBtn">← Back</a>
+    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    <div id="gameContainer">
+      <div id="score">0</div>
+      <canvas id="game" width="480" height="600"></canvas>
+      <div id="introduction">Hold down to stretch a stick, then release!</div>
+      <div id="perfect">✨ DOUBLE SCORE ✨</div>
+      <button id="restart">RESTART</button>
+    </div>
+
+    <script>
+      function getLast(arr) {
+        return arr[arr.length - 1];
+      }
+
+      Math.sinus = function (degree) {
+        return Math.sin((degree / 180) * Math.PI);
+      };
+
+      let phase = "waiting";
+      let lastTimestamp;
+      let heroX, heroY, sceneOffset;
+      let platforms = [];
+      let sticks = [];
+      let trees = [];
+      let score = 0;
+
+      const GAME_WIDTH = 480;
+      const GAME_HEIGHT = 600;
+      const platformHeight = 150;
+      const heroDistanceFromEdge = 10;
+      const paddingX = 100;
+      const perfectAreaSize = 10;
+      const backgroundSpeedMultiplier = 0.2;
+      const hill1BaseHeight = 150;
+      const hill1Amplitude = 15;
+      const hill1Stretch = 1;
+      const hill2BaseHeight = 100;
+      const hill2Amplitude = 30;
+      const hill2Stretch = 0.5;
+      const stretchingSpeed = 4;
+      const turningSpeed = 4;
+      const walkingSpeed = 4;
+      const transitioningSpeed = 2;
+      const fallingSpeed = 2;
+      const heroWidth = 17;
+      const heroHeight = 30;
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      const introductionElement = document.getElementById("introduction");
+      const perfectElement = document.getElementById("perfect");
+      const restartButton = document.getElementById("restart");
+      const scoreElement = document.getElementById("score");
+      const inGameRestartBtn = document.getElementById("inGameRestartBtn");
+      const gameContainer = document.getElementById("gameContainer");
+
+      inGameRestartBtn.addEventListener("click", function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          resetGame();
+      });
+
+      resetGame();
+
+      function resetGame() {
+        phase = "waiting";
+        lastTimestamp = undefined;
+        sceneOffset = 0;
+        score = 0;
+        introductionElement.style.opacity = 1;
+        perfectElement.style.opacity = 0;
+        restartButton.style.display = "none";
+        scoreElement.innerText = score;
+        platforms = [{ x: 50, w: 50 }];
+        generatePlatform(); generatePlatform(); generatePlatform(); generatePlatform();
+        sticks = [{ x: platforms[0].x + platforms[0].w, length: 0, rotation: 0 }];
+        trees = [];
+        for (let i = 0; i < 10; i++) generateTree();
+        heroX = platforms[0].x + platforms[0].w - heroDistanceFromEdge;
+        heroY = 0;
+        draw();
+      }
+
+      function generateTree() {
+        const minimumGap = 30, maximumGap = 150;
+        const lastTree = trees[trees.length - 1];
+        let furthestX = lastTree ? lastTree.x : 0;
+        const x = furthestX + minimumGap + Math.floor(Math.random() * (maximumGap - minimumGap));
+        const treeColors = ["#6D8821", "#8FAC34", "#98B333"];
+        const color = treeColors[Math.floor(Math.random() * 3)];
+        trees.push({ x, color });
+      }
+
+      function generatePlatform() {
+        const minimumGap = 40, maximumGap = 200;
+        const minimumWidth = 20, maximumWidth = 100;
+        const lastPlatform = platforms[platforms.length - 1];
+        let furthestX = lastPlatform.x + lastPlatform.w;
+        const x = furthestX + minimumGap + Math.floor(Math.random() * (maximumGap - minimumGap));
+        const w = minimumWidth + Math.floor(Math.random() * (maximumWidth - minimumWidth));
+        platforms.push({ x, w });
+      }
+
+      window.addEventListener("keydown", function (event) {
+        if ((event.key === "Enter" || event.key === " ") && restartButton.style.display === "block") { 
+            event.preventDefault(); 
+            resetGame(); 
+            restartButton.style.display = "none";
+        }
+      });
+
+      function handleStart(event) {
+        if (event.target.closest('#backBtn') || event.target.closest('#inGameRestartBtn') || event.target.closest('#restart')) return;
+        if (event.type === 'touchstart') event.preventDefault();
+        
+        if (phase == "waiting") {
+          lastTimestamp = undefined;
+          introductionElement.style.opacity = 0;
+          phase = "stretching";
+          window.requestAnimationFrame(animate);
+        }
+      }
+
+      function handleEnd(event) {
+        if (event.type === 'touchend' && event.target !== restartButton) event.preventDefault();
+        if (phase == "stretching") phase = "turning";
+      }
+
+      gameContainer.addEventListener("mousedown", handleStart);
+      gameContainer.addEventListener("touchstart", handleStart, { passive: false });
+      window.addEventListener("mouseup", handleEnd);
+      window.addEventListener("touchend", handleEnd, { passive: false });
+
+      window.requestAnimationFrame(animate);
+
+      function animate(timestamp) {
+        if (!lastTimestamp) {
+          lastTimestamp = timestamp;
+          window.requestAnimationFrame(animate);
+          return;
+        }
+
+        switch (phase) {
+          case "waiting": return;
+          case "stretching": {
+            getLast(sticks).length += (timestamp - lastTimestamp) / stretchingSpeed;
+            break;
+          }
+          case "turning": {
+            getLast(sticks).rotation += (timestamp - lastTimestamp) / turningSpeed;
+            if (getLast(sticks).rotation > 90) {
+              getLast(sticks).rotation = 90;
+              const [nextPlatform, perfectHit] = thePlatformTheStickHits();
+              if (nextPlatform) {
+                score += perfectHit ? 2 : 1;
+                scoreElement.innerText = score;
+                if (perfectHit) {
+                  perfectElement.style.opacity = 1;
+                  setTimeout(() => (perfectElement.style.opacity = 0), 1000);
+                }
+                generatePlatform();
+                generateTree(); generateTree();
+              }
+              phase = "walking";
+            }
+            break;
+          }
+          case "walking": {
+            heroX += (timestamp - lastTimestamp) / walkingSpeed;
+            const [nextPlatform] = thePlatformTheStickHits();
+            if (nextPlatform) {
+              const maxHeroX = nextPlatform.x + nextPlatform.w - heroDistanceFromEdge;
+              if (heroX > maxHeroX) { heroX = maxHeroX; phase = "transitioning"; }
+            } else {
+              const maxHeroX = getLast(sticks).x + getLast(sticks).length + heroWidth;
+              if (heroX > maxHeroX) { heroX = maxHeroX; phase = "falling"; }
+            }
+            break;
+          }
+          case "transitioning": {
+            sceneOffset += (timestamp - lastTimestamp) / transitioningSpeed;
+            const [nextPlatform] = thePlatformTheStickHits();
+            if (sceneOffset > nextPlatform.x + nextPlatform.w - paddingX) {
+              sticks.push({ x: nextPlatform.x + nextPlatform.w, length: 0, rotation: 0 });
+              phase = "waiting";
+            }
+            break;
+          }
+          case "falling": {
+            if (getLast(sticks).rotation < 180)
+              getLast(sticks).rotation += (timestamp - lastTimestamp) / turningSpeed;
+            heroY += (timestamp - lastTimestamp) / fallingSpeed;
+            const maxHeroY = platformHeight + 100;
+            if (heroY > maxHeroY) { restartButton.style.display = "block"; return; }
+            break;
+          }
+          default: throw Error("Wrong phase");
+        }
+
+        draw();
+        window.requestAnimationFrame(animate);
+        lastTimestamp = timestamp;
+      }
+
+      function thePlatformTheStickHits() {
+        if (getLast(sticks).rotation != 90)
+          throw Error(`Stick is ${getLast(sticks).rotation}°`);
+        const stickFarX = getLast(sticks).x + getLast(sticks).length;
+        const platformTheStickHits = platforms.find(
+          (platform) => platform.x < stickFarX && stickFarX < platform.x + platform.w
+        );
+        if (
+          platformTheStickHits &&
+          platformTheStickHits.x + platformTheStickHits.w / 2 - perfectAreaSize / 2 < stickFarX &&
+          stickFarX < platformTheStickHits.x + platformTheStickHits.w / 2 + perfectAreaSize / 2
+        )
+          return [platformTheStickHits, true];
+        return [platformTheStickHits, false];
+      }
+
+      function draw() {
+        ctx.save();
+        ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        drawBackground();
+        ctx.translate(
+          (GAME_WIDTH - GAME_WIDTH) / 2 - sceneOffset, // (GAME_WIDTH - GAME_WIDTH) / 2 is 0
+          0
+        );
+        drawPlatforms();
+        drawHero();
+        drawSticks();
+        ctx.restore();
+      }
+
+      restartButton.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        resetGame();
+        restartButton.style.display = "none";
+      });
+
+      function drawPlatforms() {
+        platforms.forEach(({ x, w }) => {
+          // Platform body
+          ctx.fillStyle = "#1a1a2e";
+          ctx.fillRect(x, GAME_HEIGHT - platformHeight, w, platformHeight);
+          // Platform top edge
+          ctx.fillStyle = "#7c5cfc";
+          ctx.fillRect(x, GAME_HEIGHT - platformHeight, w, 3);
+
+          if (getLast(sticks).x < x) {
+            ctx.fillStyle = "#ffd93d";
+            ctx.fillRect(
+              x + w / 2 - perfectAreaSize / 2,
+              GAME_HEIGHT - platformHeight,
+              perfectAreaSize,
+              perfectAreaSize
+            );
+          }
+        });
+      }
+
+      function drawHero() {
+        ctx.save();
+        ctx.translate(
+          heroX - heroWidth / 2,
+          heroY + GAME_HEIGHT - platformHeight - heroHeight / 2
+        );
+
+        // Body
+        ctx.fillStyle = "#1a1a2e";
+        drawRoundedRect(-heroWidth / 2, -heroHeight / 2, heroWidth, heroHeight - 4, 5);
+
+        // Legs
+        ctx.beginPath(); ctx.arc(5, 11.5, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-5, 11.5, 3, 0, Math.PI * 2); ctx.fill();
+
+        // Eye
+        ctx.beginPath(); ctx.fillStyle = "white";
+        ctx.arc(5, -7, 3, 0, Math.PI * 2); ctx.fill();
+
+        // Band
+        ctx.fillStyle = "#ff6b6b";
+        ctx.fillRect(-heroWidth / 2 - 1, -12, heroWidth + 2, 4.5);
+        ctx.beginPath();
+        ctx.moveTo(-9, -14.5); ctx.lineTo(-17, -18.5); ctx.lineTo(-14, -8.5); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-10, -10.5); ctx.lineTo(-15, -3.5); ctx.lineTo(-5, -7); ctx.fill();
+
+        ctx.restore();
+      }
+
+      function drawRoundedRect(x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + radius);
+        ctx.lineTo(x, y + height - radius);
+        ctx.arcTo(x, y + height, x + radius, y + height, radius);
+        ctx.lineTo(x + width - radius, y + height);
+        ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+        ctx.lineTo(x + width, y + radius);
+        ctx.arcTo(x + width, y, x + width - radius, y, radius);
+        ctx.lineTo(x + radius, y);
+        ctx.arcTo(x, y, x, y + radius, radius);
+        ctx.fill();
+      }
+
+      function drawSticks() {
+        sticks.forEach((stick) => {
+          ctx.save();
+          ctx.translate(stick.x, GAME_HEIGHT - platformHeight);
+          ctx.rotate((Math.PI / 180) * stick.rotation);
+          ctx.beginPath();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#f0f0f5"; // Updated stick color for dark theme
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, -stick.length);
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+
+      function drawBackground() {
+        var gradient = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+        gradient.addColorStop(0, "#1c1c38"); // Dark theme background
+        gradient.addColorStop(1, "#2a2a4a");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        drawHill(hill1BaseHeight, hill1Amplitude, hill1Stretch, "#232345");
+        drawHill(hill2BaseHeight, hill2Amplitude, hill2Stretch, "#1a1a35");
+        trees.forEach((tree) => drawTree(tree.x, tree.color));
+      }
+
+      function drawHill(baseHeight, amplitude, stretch, color) {
+        ctx.beginPath();
+        ctx.moveTo(0, GAME_HEIGHT);
+        ctx.lineTo(0, getHillY(0, baseHeight, amplitude, stretch));
+        for (let i = 0; i < GAME_WIDTH; i++) {
+          ctx.lineTo(i, getHillY(i, baseHeight, amplitude, stretch));
+        }
+        ctx.lineTo(GAME_WIDTH, GAME_HEIGHT);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      function drawTree(x, color) {
+        ctx.save();
+        ctx.translate(
+          (-sceneOffset * backgroundSpeedMultiplier + x) * hill1Stretch,
+          getTreeY(x, hill1BaseHeight, hill1Amplitude)
+        );
+        ctx.fillStyle = "#3a3a5a"; // Dark theme trunk
+        ctx.fillRect(-1, -5, 2, 5);
+        ctx.beginPath();
+        ctx.moveTo(-5, -5); ctx.lineTo(0, -30); ctx.lineTo(5, -5);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function getHillY(windowX, baseHeight, amplitude, stretch) {
+        const sineBaseY = GAME_HEIGHT - baseHeight;
+        return Math.sinus((sceneOffset * backgroundSpeedMultiplier + windowX) * stretch) * amplitude + sineBaseY;
+      }
+
+      function getTreeY(x, baseHeight, amplitude) {
+        const sineBaseY = GAME_HEIGHT - baseHeight;
+        return Math.sinus(x) * amplitude + sineBaseY;
+      }
+    </script>
+  </body>
+</html>

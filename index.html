@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Games Collection — Play Free Browser Games</title>
+    <meta name="description" content="A collection of 12 fun, free mini games built with pure HTML5 and JavaScript. Play instantly in your browser — no downloads required.">
+    <meta name="theme-color" content="#7c5cfc">
+    <link rel="icon" type="image/png" href="icons/simple-game.png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 100 900;
+            src: url('fonts/Outfit-Variable.woff2') format('woff2');
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-card: rgba(255, 255, 255, 0.06);
+            --bg-card-hover: rgba(255, 255, 255, 0.12);
+            --border-card: rgba(255, 255, 255, 0.1);
+            --border-card-hover: rgba(255, 255, 255, 0.25);
+            --text-primary: #f0f0f5;
+            --text-secondary: rgba(240, 240, 245, 0.7);
+            --accent-1: #7c5cfc;
+            --accent-2: #ff6b9d;
+            --accent-3: #00d4aa;
+            --accent-4: #ffb347;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated gradient orbs */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-orb-1 {
+            width: 600px; height: 600px;
+            background: var(--accent-1);
+            top: -200px; left: -100px;
+            animation: float-orb 20s ease-in-out infinite;
+        }
+        .bg-orb-2 {
+            width: 500px; height: 500px;
+            background: var(--accent-2);
+            bottom: -150px; right: -100px;
+            animation: float-orb 25s ease-in-out infinite reverse;
+        }
+        .bg-orb-3 {
+            width: 400px; height: 400px;
+            background: var(--accent-3);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation: float-orb 18s ease-in-out infinite 5s;
+        }
+
+        @keyframes float-orb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(60px, -40px) scale(1.1); }
+            50% { transform: translate(-30px, 60px) scale(0.9); }
+            75% { transform: translate(40px, 20px) scale(1.05); }
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-top: 20px;
+        }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: white;
+            padding: 6px 18px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: clamp(36px, 6vw, 64px);
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+        .header p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            font-weight: 300;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 50px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .section-icon.action { background: linear-gradient(135deg, #ff6b6b33, #ee5a2433); }
+        .section-icon.reaction { background: linear-gradient(135deg, #ffd93d33, #ff6b9d33); }
+        .section-icon.puzzle { background: linear-gradient(135deg, #00d4aa33, #7c5cfc33); }
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-card), transparent);
+        }
+
+        /* Games Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* Game Card */
+        .game-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+        }
+        .game-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 1px;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .game-card:hover {
+            transform: translateY(-6px);
+            background: var(--bg-card-hover);
+            border-color: var(--border-card-hover);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 40px rgba(124, 92, 252, 0.1);
+        }
+        .game-card:hover::before { opacity: 1; }
+
+        .card-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+        .card-image-svg {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 72px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-image-svg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.15;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .card-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-easy { background: rgba(0, 212, 170, 0.15); color: #00d4aa; }
+        .badge-medium { background: rgba(255, 179, 71, 0.15); color: #ffb347; }
+        .badge-hard { background: rgba(255, 107, 157, 0.15); color: #ff6b9d; }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .card-play {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-1);
+            transition: gap 0.3s;
+        }
+        .game-card:hover .card-play {
+            gap: 10px;
+            color: #a78bfa;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid var(--border-card);
+            margin-top: 40px;
+        }
+        .footer p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 300;
+        }
+        .footer .tech-badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .tech-badge {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            padding: 4px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 24px 16px 40px; }
+            .header { margin-bottom: 40px; }
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+            .card-image, .card-image-svg { height: 150px; }
+        }
+        @media (max-width: 480px) {
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-badge">✦ Free to Play</div>
+            <h1>Mini Games<br>Collection</h1>
+            <p>12 handcrafted browser games. No downloads, no ads — just pure fun. Click any game to start playing instantly.</p>
+        </header>
+
+        <!-- Action Games -->
+        <section class="section" id="action">
+            <div class="section-header">
+                <div class="section-icon action">⚔️</div>
+                <span class="section-title">Action Games</span>
+                <div class="section-line"></div>
+            </div>
+            <div class="games-grid">
+                <a href="catch-ball.html" class="game-card" id="card-catch-ball">
+                    <img src="icons/catch-ball.png" alt="Catch the Ball" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Catch the Ball</span>
+                            <span class="card-badge badge-easy">Easy</span>
+                        </div>
+                        <p class="card-desc">Click on falling balls to catch them before they escape. Speed increases as you score!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="arrow-game.html" class="game-card" id="card-arrow-game">
+                    <img src="icons/arrow-game.png" alt="Arrow Game" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Arrow Game</span>
+                            <span class="card-badge badge-medium">Medium</span>
+                        </div>
+                        <p class="card-desc">Draw back your bow and launch arrows at the moving target. Smooth SVG physics!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="stick-hero.html" class="game-card" id="card-stick-hero">
+                    <img src="icons/stick-hero.png" alt="Stick Hero" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Stick Hero</span>
+                            <span class="card-badge badge-medium">Medium</span>
+                        </div>
+                        <p class="card-desc">Hold to stretch a stick across gaps. Land on the platform — or fall into the void!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="Simple-Game.html" class="game-card" id="card-simple-game">
+                    <img src="icons/simple-game.png" alt="Platformer" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Platformer</span>
+                            <span class="card-badge badge-medium">Medium</span>
+                        </div>
+                        <p class="card-desc">Navigate platforms, collect all coins, and dodge deadly lava across 4 levels.</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="space-shooter.html" class="game-card" id="card-space-shooter">
+                    <img src="icons/space-shooter.png" alt="Space Shooter" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Space Shooter</span>
+                            <span class="card-badge badge-medium">Medium</span>
+                        </div>
+                        <p class="card-desc">Blast incoming enemies with your ship. Difficulty ramps up as your score climbs!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="brick-breaker.html" class="game-card" id="card-brick-breaker">
+                    <img src="icons/brick-breaker.png" alt="Brick Breaker" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Brick Breaker</span>
+                            <span class="card-badge badge-easy">Easy</span>
+                        </div>
+                        <p class="card-desc">Classic breakout! Bounce the ball off your paddle to smash all the bricks.</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Reaction & Speed Games -->
+        <section class="section" id="reaction">
+            <div class="section-header">
+                <div class="section-icon reaction">⚡</div>
+                <span class="section-title">Reaction & Speed</span>
+                <div class="section-line"></div>
+            </div>
+            <div class="games-grid">
+                <a href="flappy-square.html" class="game-card" id="card-flappy-square">
+                    <img src="icons/flappy-square.png" alt="Flappy Square" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Flappy Square</span>
+                            <span class="card-badge badge-easy">Easy</span>
+                        </div>
+                        <p class="card-desc">Click or tap to flap through narrow pipe gaps. How far can you fly?</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="color-match.html" class="game-card" id="card-color-match">
+                    <img src="icons/color-match.png" alt="Color Match" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Color Match</span>
+                            <span class="card-badge badge-easy">Easy</span>
+                        </div>
+                        <p class="card-desc">Click the matching color before time runs out. Build combos for bonus points!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="whack-a-mole.html" class="game-card" id="card-whack-mole">
+                    <img src="icons/whack-a-mole.png" alt="Whack A Mole" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Whack A Mole</span>
+                            <span class="card-badge badge-easy">Easy</span>
+                        </div>
+                        <p class="card-desc">Smash moles before they hide! You have 30 seconds to maximize your score.</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Puzzle & Strategy -->
+        <section class="section" id="puzzle">
+            <div class="section-header">
+                <div class="section-icon puzzle">🧩</div>
+                <span class="section-title">Puzzle & Strategy</span>
+                <div class="section-line"></div>
+            </div>
+            <div class="games-grid">
+                <a href="memory-match.html" class="game-card" id="card-memory-match">
+                    <img src="icons/memory-match.png" alt="Memory Match" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Memory Match</span>
+                            <span class="card-badge badge-easy">Easy–Hard</span>
+                        </div>
+                        <p class="card-desc">Flip cards to find matching pairs. Test your memory across difficulty levels!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="snake.html" class="game-card" id="card-snake">
+                    <img src="icons/snake.png" alt="Snake Game" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Snake Game</span>
+                            <span class="card-badge badge-medium">Medium</span>
+                        </div>
+                        <p class="card-desc">Eat food and grow longer. Don't crash into walls or your own tail!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+
+                <a href="cookie-clicker.html" class="game-card" id="card-cookie-clicker">
+                    <img src="icons/cookie-clicker.png" alt="Cookie Clicker" class="card-image" loading="lazy">
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-title">Cookie Clicker</span>
+                            <span class="card-badge badge-easy">Easy</span>
+                        </div>
+                        <p class="card-desc">Click cookies to earn. Buy upgrades to automate your cookie empire!</p>
+                        <span class="card-play">Play Now →</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>🎮 All games load instantly • 💾 Progress saved locally • 📱 Works on mobile</p>
+            <div class="tech-badges">
+                <span class="tech-badge">HTML5</span>
+                <span class="tech-badge">CSS3</span>
+                <span class="tech-badge">JavaScript</span>
+                <span class="tech-badge">Canvas API</span>
+                <span class="tech-badge">No Dependencies</span>
+            </div>
+        </footer>
+    </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

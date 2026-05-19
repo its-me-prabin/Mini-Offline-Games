@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker — Mini Games Collection</title>
+    <meta name="description" content="Click cookies to earn! Buy upgrades to automate your cookie empire.">
+    <link rel="icon" type="image/png" href="icons/cookie-clicker.png">
+    <style>
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 100 900;
+            src: url('fonts/Outfit-Variable.woff2') format('woff2');
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 100vh; font-family: 'Outfit', sans-serif; color: #f0f0f5;
+        }
+        .back-btn {
+            position: fixed; top: 16px; left: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+
+        .game-title {
+            font-size: 28px; font-weight: 800; margin-bottom: 16px;
+            background: linear-gradient(135deg, #f5af19, #f12711);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        #gameContainer {
+            width: 100%; max-width: 620px; width: 95vw;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 20px;
+            display: grid; grid-template-columns: 1fr; gap: 20px;
+        }
+        @media (min-width: 600px) {
+            #gameContainer {
+                grid-template-columns: 1fr 1fr;
+                padding: 28px; gap: 28px;
+            }
+        }
+        #leftPanel { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #stats { width: 100%; margin-bottom: 20px; }
+        .stat-row {
+            background: rgba(255,255,255,0.04); padding: 10px 16px; border-radius: 10px;
+            margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.06);
+            display: flex; justify-content: space-between; font-size: 15px;
+        }
+        .stat-row span { color: #f5af19; font-weight: 700; }
+
+        #clickButton {
+            width: 140px; height: 140px; border-radius: 50%; border: none;
+            background: radial-gradient(circle at 35% 35%, #FFE66D, #FFA500, #e08900);
+            color: #333; font-size: 68px; cursor: pointer;
+            transition: transform 0.1s; box-shadow: 0 8px 30px rgba(245,175,25,0.3);
+            margin-bottom: 16px; position: relative;
+        }
+        #clickButton:hover { transform: scale(1.08); box-shadow: 0 12px 40px rgba(245,175,25,0.4); }
+        #clickButton:active { transform: scale(0.92); }
+
+        .cps { font-size: 13px; color: rgba(240,240,245,0.4); }
+
+        .floatingScore {
+            position: fixed; color: #FFD700; font-weight: 700; font-size: 22px;
+            pointer-events: none; text-shadow: 0 0 8px rgba(255,215,0,0.5);
+            animation: float-up 0.8s ease-out forwards; font-family: 'Outfit', sans-serif;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+
+        #rightPanel h3 {
+            font-size: 18px; font-weight: 700; margin-bottom: 14px; text-align: center;
+            color: rgba(240,240,245,0.8);
+        }
+        #upgrades {
+            display: flex; flex-direction: column; gap: 8px;
+            max-height: 360px; overflow-y: auto;
+            scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
+        }
+        .upgrade {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 12px 14px; cursor: pointer;
+            transition: all 0.2s; font-size: 14px;
+        }
+        .upgrade:hover { background: rgba(255,255,255,0.08); border-color: rgba(245,175,25,0.3); transform: translateX(3px); }
+        .upgrade.disabled { opacity: 0.35; cursor: not-allowed; }
+        .upgrade.disabled:hover { background: rgba(255,255,255,0.04); transform: none; border-color: rgba(255,255,255,0.08); }
+        .upgrade-name { font-weight: 700; display: block; margin-bottom: 2px; }
+        .upgrade-cost { font-size: 12px; color: rgba(240,240,245,0.5); }
+        .upgrade-type { font-size: 11px; color: #f5af19; margin-left: 6px; }
+
+        .restart-btn {
+            position: fixed; top: 16px; right: 16px; z-index: 100;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
+
+        .instructions { font-size: 13px; margin-top: 14px; color: rgba(240,240,245,0.4); }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back</a>
+    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    <div class="game-title">🍪 Cookie Clicker</div>
+    <div id="gameContainer">
+        <div id="leftPanel">
+            <div id="stats">
+                <div class="stat-row">Cookies <span id="score">0</span></div>
+                <div class="stat-row">Per Second <span id="cps">0</span></div>
+                <div class="stat-row">Per Click <span id="cpc">1</span></div>
+            </div>
+            <button id="clickButton">🍪</button>
+            <div class="cps">Click to earn cookies!</div>
+        </div>
+        <div id="rightPanel">
+            <h3>Upgrades</h3>
+            <div id="upgrades"></div>
+        </div>
+    </div>
+    <div class="instructions">🖱️ Click the cookie to earn • Buy upgrades to earn faster!</div>
+
+    <script>
+        const clickButton = document.getElementById('clickButton');
+        const scoreDisplay = document.getElementById('score');
+        const cpsDisplay = document.getElementById('cps');
+        const cpcDisplay = document.getElementById('cpc');
+        const upgradesContainer = document.getElementById('upgrades');
+
+        let cookies = 0;
+        let cps = 0;
+        let clickValue = 1;
+
+        const upgrades = [
+            { name: 'Double Click', baseCost: 10, cost: 10, effect: () => { clickValue *= 2; }, type: 'click', desc: '×2 click' },
+            { name: 'Auto Clicker', baseCost: 100, cost: 100, effect: () => { cps += 1; }, type: 'cps', desc: '+1/s' },
+            { name: 'Mega Click', baseCost: 250, cost: 250, effect: () => { clickValue += 5; }, type: 'click', desc: '+5 click' },
+            { name: 'Better Auto', baseCost: 500, cost: 500, effect: () => { cps += 5; }, type: 'cps', desc: '+5/s' },
+            { name: 'Machine', baseCost: 1000, cost: 1000, effect: () => { cps += 10; }, type: 'cps', desc: '+10/s' },
+            { name: 'Ultra Clicker', baseCost: 2500, cost: 2500, effect: () => { clickValue *= 3; }, type: 'click', desc: '×3 click' },
+            { name: 'Factory', baseCost: 5000, cost: 5000, effect: () => { cps += 50; }, type: 'cps', desc: '+50/s' },
+            { name: 'Super Machine', baseCost: 10000, cost: 10000, effect: () => { cps += 100; }, type: 'cps', desc: '+100/s' },
+            { name: 'Empire', baseCost: 50000, cost: 50000, effect: () => { cps += 500; }, type: 'cps', desc: '+500/s' },
+        ];
+
+        clickButton.addEventListener('click', (e) => {
+            cookies += clickValue;
+            updateDisplays();
+
+            // Fixed: floating score positioned relative to button
+            const rect = clickButton.getBoundingClientRect();
+            const floatScore = document.createElement('div');
+            floatScore.className = 'floatingScore';
+            floatScore.textContent = '+' + formatNumber(clickValue);
+            floatScore.style.left = (rect.left + rect.width / 2 - 20 + (Math.random() * 40 - 20)) + 'px';
+            floatScore.style.top = (rect.top - 10) + 'px';
+            document.body.appendChild(floatScore);
+            setTimeout(() => floatScore.remove(), 800);
+
+            renderUpgrades();
+        });
+
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return Math.floor(num);
+        }
+
+        function updateDisplays() {
+            scoreDisplay.textContent = formatNumber(cookies);
+            cpsDisplay.textContent = formatNumber(cps);
+            cpcDisplay.textContent = formatNumber(clickValue);
+        }
+
+        // Fixed: renderUpgrades properly recreates onclick handlers
+        function renderUpgrades() {
+            upgradesContainer.innerHTML = '';
+            upgrades.forEach((upgrade) => {
+                const div = document.createElement('div');
+                div.className = 'upgrade' + (cookies >= upgrade.cost ? '' : ' disabled');
+                div.innerHTML = `
+                    <span class="upgrade-name">${upgrade.name}<span class="upgrade-type">${upgrade.desc}</span></span>
+                    <span class="upgrade-cost">Cost: ${formatNumber(upgrade.cost)} cookies</span>
+                `;
+                if (cookies >= upgrade.cost) {
+                    div.addEventListener('click', () => {
+                        if (cookies >= upgrade.cost) {
+                            cookies -= upgrade.cost;
+                            upgrade.effect();
+                            upgrade.cost = Math.floor(upgrade.cost * 1.15);
+                            updateDisplays();
+                            renderUpgrades();
+                        }
+                    });
+                }
+                upgradesContainer.appendChild(div);
+            });
+        }
+
+        // Auto income — 10 updates per second
+        let autoIncomeTimer = setInterval(() => {
+            if (cps > 0) {
+                cookies += cps / 10;
+                updateDisplays();
+            }
+        }, 100);
+
+        function restartGame() {
+            cookies = 0; cps = 0; clickValue = 1;
+            upgrades.forEach(u => u.cost = u.baseCost);
+            clearInterval(autoIncomeTimer);
+            autoIncomeTimer = setInterval(() => {
+                if (cps > 0) {
+                    cookies += cps / 10;
+                    updateDisplays();
+                }
+            }, 100);
+            updateDisplays();
+            renderUpgrades();
+        }
+
+        document.getElementById('inGameRestartBtn').addEventListener('click', restartGame);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') restartGame();
+        });
+
+        renderUpgrades();
+    </script>
+</body>
+</html>
