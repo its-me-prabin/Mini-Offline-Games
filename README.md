@@ -25,7 +25,7 @@ These games are 100% web-based and fully responsive! You can play them on any de
 
 ### Option 1: Play Online (Recommended)
 You can access and play the entire suite online via GitHub Pages or any live server hosting this directory:
-**[Play Mini-Games Collection Here](#)** *(Replace `#` with your live URL once deployed)*
+**[Play Mini-Games Collection Here](https://mini-offline-games.vercel.app/)** *(Replace `#` with your live URL once deployed)*
 
 ### Option 2: Play Locally
 1. Clone or download this repository to your computer.
