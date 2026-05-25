@@ -20,31 +20,28 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             height: 100vh; font-family: 'Outfit', sans-serif; color: #f0f0f5; overflow: hidden;
         }
-        .back-btn {
-            position: fixed; top: 16px; left: 16px; z-index: 100;
-            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
-            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        .game-header {
+            width: 100%; max-width: 440px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 4px; margin-bottom: 8px; z-index: 100; gap: 12px;
         }
-        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
-
-        .restart-btn {
-            position: fixed; top: 16px; right: 16px; z-index: 100;
-            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
-            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
-        }
-        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
-
         .game-title {
-            font-size: 28px; font-weight: 800; margin-bottom: 16px;
+            font-size: clamp(18px, 4.5vw, 24px); font-weight: 800; margin: 0;
             background: linear-gradient(135deg, #7c5cfc, #00d4aa);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            white-space: nowrap; text-align: center;
         }
+        .back-btn, .restart-btn {
+            position: relative; z-index: 10;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 6px 14px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 4px;
+            flex-shrink: 0;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
 
         .game-hud {
             display: flex; gap: 12px; margin-bottom: 16px; align-items: center;
@@ -85,9 +82,11 @@
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-btn">← Back</a>
-    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
-    <div class="game-title">🎯 Catch the Ball</div>
+    <div class="game-header">
+        <a href="index.html" class="back-btn">← Back</a>
+        <h1 class="game-title">🎯 Catch the Ball</h1>
+        <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    </div>
     <div class="game-hud">
         <div class="hud-item">Score: <span id="score">0</span></div>
         <button class="game-btn btn-start" id="startBtn">Start</button>
@@ -203,7 +202,7 @@
             const mouseY = (clientY - rect.top) * scaleY;
             const dx = mouseX - ball.x, dy = mouseY - ball.y;
             // Slightly increased hit radius for better touch targeting
-            if (Math.sqrt(dx * dx + dy * dy) < ball.radius + 15) {
+            if (Math.sqrt(dx * dx + dy * dy) < ball.radius + 22) {
                 spawnCatchParticles(ball.x, ball.y);
                 score++;
                 scoreDisplay.textContent = score;
@@ -212,13 +211,10 @@
             }
         }
 
-        canvas.addEventListener('click', (e) => handleInteraction(e.clientX, e.clientY));
-        canvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 0) {
-                e.preventDefault();
-                handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: false });
+        canvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            handleInteraction(e.clientX, e.clientY);
+        });
 
         document.getElementById('startBtn').addEventListener('click', () => {
             if (!gameRunning) {

@@ -30,14 +30,17 @@
         left: 0;
       }
 
-      /* Back Button */
+      /* Game Header Bar */
+      .game-header {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 16px; gap: 8px; flex-wrap: wrap;
+        background: rgba(10, 10, 26, 0.45); backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
       .back-btn {
-        position: fixed;
-        top: 16px;
-        left: 16px;
-        z-index: 100;
         background: rgba(255,255,255,0.08);
-        backdrop-filter: blur(12px);
         border: 1px solid rgba(255,255,255,0.15);
         color: #f0f0f5;
         padding: 8px 18px;
@@ -57,30 +60,20 @@
         transform: translateX(-2px);
       }
 
-        .restart-btn {
-            position: fixed; top: 16px; right: 16px; z-index: 100;
-            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
-            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
-        }
-        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
+      .restart-btn {
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+          padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+          font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+          transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+      }
+      .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
 
       /* HUD */
       #hud {
-        position: fixed;
-        top: 16px;
-        right: 140px;
-        z-index: 100;
         display: flex;
         align-items: center;
-        gap: 12px;
-        background: rgba(255,255,255,0.08);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,0.15);
-        padding: 8px 18px;
-        border-radius: 100px;
+        gap: 8px;
         color: #f0f0f5;
         font-family: 'Outfit', sans-serif;
         font-size: 14px;
@@ -112,13 +105,7 @@
 
       /* Score display */
       #score-display {
-        position: fixed;
-        top: 16px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 100;
         background: rgba(255,255,255,0.08);
-        backdrop-filter: blur(12px);
         border: 1px solid rgba(255,255,255,0.15);
         padding: 8px 24px;
         border-radius: 100px;
@@ -130,16 +117,18 @@
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-btn">← Back</a>
-    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
-    <div id="score-display">Score: <span id="scoreValue">0</span></div>
-    <div id="hud">
-      Level:
-      <select id="levelSelect">
-        <option value="easy">Easy</option>
-        <option value="moderate">Moderate</option>
-        <option value="hard">Hard</option>
-      </select>
+    <div class="game-header">
+        <a href="index.html" class="back-btn">← Back</a>
+        <div id="score-display">Score: <span id="scoreValue">0</span></div>
+        <div id="hud">
+          Level:
+          <select id="levelSelect">
+            <option value="easy">Easy</option>
+            <option value="moderate">Moderate</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
     </div>
 
     <svg id="game" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" overflow="visible">

@@ -26,24 +26,27 @@
         align-items: center;
       }
 
-      .back-btn {
-        position: fixed; top: 16px; left: 16px; z-index: 100;
-        background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.15); color: #f0f0f5;
-        padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-        font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-        transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+      .game-header {
+          width: 100%; max-width: 480px;
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 10px 4px; margin-bottom: 8px; z-index: 100; gap: 12px;
       }
-      .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
-
-      .restart-btn {
-          position: fixed; top: 16px; right: 16px; z-index: 100;
+      .game-title {
+          font-size: clamp(18px, 4.5vw, 24px); font-weight: 800; margin: 0;
+          background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+          white-space: nowrap; text-align: center;
+      }
+      .back-btn, .restart-btn {
+          position: relative; z-index: 10;
           background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
           border: 1px solid rgba(255, 255, 255, 0.15); color: #f0f0f5;
-          padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-          font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-          transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+          padding: 6px 14px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+          font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+          transition: all 0.3s; display: inline-flex; align-items: center; gap: 4px;
+          flex-shrink: 0;
       }
+      .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
       .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
 
       #gameContainer {
@@ -133,8 +136,11 @@
     </style>
   </head>
   <body>
-    <a href="index.html" class="back-btn" id="backBtn">← Back</a>
-    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    <div class="game-header">
+        <a href="index.html" class="back-btn" id="backBtn">← Back</a>
+        <h1 class="game-title">⚔️ Stick Hero</h1>
+        <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    </div>
     <div id="gameContainer">
       <div id="score">0</div>
       <canvas id="game" width="480" height="600"></canvas>

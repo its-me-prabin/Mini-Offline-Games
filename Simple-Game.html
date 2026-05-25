@@ -24,32 +24,28 @@
                 min-height: 100vh;
 			}
 
-            .back-btn {
-                position: fixed; top: 16px; left: 16px; z-index: 100;
-                background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-                border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
-                padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-                font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-                transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+            .game-header {
+                width: 100%; max-width: 900px; width: 95vw;
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 10px 4px; margin-bottom: 8px; z-index: 100; gap: 12px;
             }
-            .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
-
-            .restart-btn {
-                position: fixed; top: 16px; right: 16px; z-index: 100;
-                background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-                border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
-                padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-                font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-                transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
-            }
-            .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
-
-			h2 {
-                font-size: 28px; font-weight: 800; margin: 24px 0 16px;
+            .game-title {
+                font-size: clamp(18px, 4.5vw, 24px); font-weight: 800; margin: 0;
                 background: linear-gradient(135deg, #7c5cfc, #00d4aa);
                 -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-				text-align: center;
-			}
+                white-space: nowrap; text-align: center;
+            }
+            .back-btn, .restart-btn {
+                position: relative; z-index: 10;
+                background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+                border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+                padding: 6px 14px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+                font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+                transition: all 0.3s; display: inline-flex; align-items: center; gap: 4px;
+                flex-shrink: 0;
+            }
+            .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+            .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
 
 			.background {
 				table-layout: fixed;
@@ -153,9 +149,11 @@
 		</style>
 	</head>
 	<body>
+    <div class="game-header">
         <a href="index.html" class="back-btn">← Back</a>
+        <h1 class="game-title">🏃 Platformer</h1>
         <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
-		<h2>Platformer</h2>
+    </div>
         
         <div class="mobile-controls">
             <div class="d-pad">

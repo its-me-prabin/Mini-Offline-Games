@@ -20,31 +20,28 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             height: 100vh; font-family: 'Outfit', sans-serif; color: #f0f0f5; overflow: hidden;
         }
-        .back-btn {
-            position: fixed; top: 16px; left: 16px; z-index: 100;
-            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
-            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
+        .game-header {
+            width: 100%; max-width: 480px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 4px; margin-bottom: 8px; z-index: 100; gap: 12px;
         }
-        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
-
-        .restart-btn {
-            position: fixed; top: 16px; right: 16px; z-index: 100;
-            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
-            padding: 8px 18px; border-radius: 100px; font-family: 'Outfit', sans-serif;
-            font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
-        }
-        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
-
         .game-title {
-            font-size: 28px; font-weight: 800; margin-bottom: 16px;
+            font-size: clamp(18px, 4.5vw, 24px); font-weight: 800; margin: 0;
             background: linear-gradient(135deg, #00d4aa, #74b9ff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            white-space: nowrap; text-align: center;
         }
+        .back-btn, .restart-btn {
+            position: relative; z-index: 10;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15); color: #f0f0f5;
+            padding: 6px 14px; border-radius: 100px; font-family: 'Outfit', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 4px;
+            flex-shrink: 0;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(-2px); }
+        .restart-btn:hover { background: rgba(255,255,255,0.15); transform: translateX(2px); }
         #gameContainer {
             position: relative; width: 100%; max-width: 480px; aspect-ratio: 480/640; height: auto;
             border: 2px solid rgba(0,212,170,0.2); border-radius: 12px; overflow: hidden;
@@ -114,9 +111,11 @@
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-btn">← Back</a>
-    <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
-    <div class="game-title">🚀 Space Shooter</div>
+    <div class="game-header">
+        <a href="index.html" class="back-btn">← Back</a>
+        <h1 class="game-title">🚀 Space Shooter</h1>
+        <button class="restart-btn" id="inGameRestartBtn">↻ Restart</button>
+    </div>
     <div id="gameContainer">
         <div class="hud">
             <div class="hud-item">Score: <span id="score">0</span></div>
@@ -199,6 +198,53 @@
         setupTouch(btnLeft, 'ArrowLeft');
         setupTouch(btnRight, 'ArrowRight');
         setupTouch(btnFire, ' ');
+
+        // Direct Touch Dragging on Canvas (Relative Movement + Auto-fire)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let shipStartX = 0;
+        let shipStartY = 0;
+        let isDragging = false;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!gameRunning) return;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            shipStartX = ship.x;
+            shipStartY = ship.y;
+            isDragging = true;
+            keys[' '] = true; // Auto-fire on touch!
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!gameRunning || !isDragging) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const dx = touch.clientX - touchStartX;
+            const dy = touch.clientY - touchStartY;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let newX = shipStartX + dx * scaleX;
+            let newY = shipStartY + dy * scaleY;
+            
+            if (newX < 0) newX = 0;
+            if (newX + ship.width > W) newX = W - ship.width;
+            if (newY < 40) newY = 40;
+            if (newY + ship.height > H) newY = H - ship.height;
+            
+            ship.x = newX;
+            ship.y = newY;
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            isDragging = false;
+            keys[' '] = false; // Stop firing on touch release
+            e.preventDefault();
+        });
 
         function spawnEnemy() {
             enemies.push({
